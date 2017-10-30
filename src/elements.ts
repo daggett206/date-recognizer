@@ -1,6 +1,6 @@
-import {days, lexical, months, task, time, pointer, appendix, action} from "./declarations";
+import {days, lexical, months, task, time, pointer, appendix, action, recognitions} from "./declarations";
 
-export type element = 'month'
+export type elementType = 'month'
     | 'day'
     | 'lexical'
     | 'time'
@@ -9,21 +9,27 @@ export type element = 'month'
     | 'appendix'
     | 'action';
 
-const _extract = ({type, values}) => {
-    const _values = Object.keys(values)
-        .map(key => values[key])
-        .reduce((acc, val) => [...acc, ...val]);
+export interface IElement {
+    type: elementType;
+    key: string;
+}
 
-    return {type, values: _values};
+const _extract = (type) => {
+
+    const values = Object
+        .keys(recognitions[type])
+        .reduce((acc, key) => [ ...acc, {key, value: recognitions[type][key]} ], []);
+
+    return {type, values};
 };
 
 export const elements = [
-    {type: "task", values: task},
-    {type: "time", values: time},
-    {type: "month" , values: months},
-    {type: "day", values: days},
-    {type: "lexical", values: lexical},
-    {type: "pointer", values: pointer},
-    {type: "appendix", values: appendix},
-    {type: "action", values: action},
+    "task",
+    "time",
+    "months",
+    "days",
+    "lexical",
+    "pointer",
+    "appendix",
+    "action",
 ].map(_extract);

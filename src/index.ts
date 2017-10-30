@@ -1,4 +1,4 @@
-import {identifyElementType, constructRecognition, getContext} from "./parsers";
+import {identifyElement, getContext} from "./parsers";
 import {IRecognition, IRecognitionBuilder} from "./declarations";
 
 const recognize = (text: string): Promise<IRecognitionBuilder> => {
@@ -16,40 +16,19 @@ const recognize = (text: string): Promise<IRecognitionBuilder> => {
 
     const flow = text.split(' ');
 
-    const recognition = flow.map((value: string) => {
-        const type = identifyElementType(value);
-        // return {type, value, context: getContext(flow, value, type)};
-    });
-    //     .reduce((acc, current) => {
-    //
-    //     switch (identifyElement(current.toLowerCase())) {
-    //         case "month":
-    //             return {...acc, month: [...acc.month, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "day":
-    //             return {...acc, day: [...acc.day, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "lexical":
-    //             return {...acc, lexical: [...acc.lexical, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "time":
-    //             return {...acc, time: [...acc.time, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "task":
-    //             return {...acc, task: [...acc.task, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "pointer":
-    //             return {...acc, pointer: [...acc.pointer, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "appendix":
-    //             return {...acc, appendix: [...acc.appendix, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //
-    //         case "action":
-    //             return {...acc, action: [...acc.action, {value: current, context: identifyElement(flow[flow.indexOf(current) + 1]) }]};
-    //     }
-    // }, defaultRec);
+    const recognition = flow
+        .map((value: string) => {
+            const type = identifyElement(value);
+            return {...type, value, context: getContext(flow, value)};
+        })
+        .reduce((acc, current) => {
 
-    // console.log(recognition);
+            return {
+                ...acc,
+                [current.type]: [...acc[current.type], current]
+            };
+
+        }, defaultRec);
 
     return Promise.resolve({recognition, text});
 };
@@ -69,8 +48,8 @@ const construct = (builder: IRecognitionBuilder) => {
     console.log(filtered);
 };
 
-recognize("Через 10 дней купить")
-    // .then(e => console.log(e))
+recognize("Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить")
+    .then(e => console.log(e))
     // .then(construct);
 
 // Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить

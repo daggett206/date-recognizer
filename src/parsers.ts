@@ -1,79 +1,58 @@
-import {element, elements} from "./elements";
-import {IRecognition, recognitions} from "./declarations";
+import {elements, IElement} from "./elements";
 
-export const getContext = (flow: string[], value: string, type: element): element[] => {
+export const getContext = (flow: string[], value: string): IElement[] => {
     const index = flow.indexOf(value);
-    const a  =[-1,1]
-        .map(operator => identifyElementType(flow[index + operator]))
-        .filter(type => type)
-        // .map(type => {
-        //
-        //     return Object
-        //         .keys(recognitions[type])
-        //         .filter(key => {
-        //             recognitions[type][key].some(value => type)
-        //         })
-        //         .map(item => {
-        //             console.log(item);
-        //         })
-        //         // .reduce((acc, current) => {
-        //         //     return
-        //         // })
-        //         // .filter(element =>
-        //         //     element.values.some(value => current.match(value)))
-        // })
 
-    // console.log(a);
-
-    return a;
+    return [-1,1]
+        .filter(operator => flow[index + operator])
+        .map(operator => identifyElement(flow[index + operator]));
 };
 
-export const identifyElementType = (current: string): element => {
+export const identifyElement = (current: string): IElement => {
 
     if (!current) {
         return null;
     }
-    console.log(elements);
-    const a = elements
-        .filter(element => {
-            console.log(element.values);
-            return element.values.some(value => current.match(value));
-        })
-        .reduce((acc, element) => {
-            // console.log(element);
-            return element.type
-        }, "task" as element);
 
-    // console.log(a);
-
-    return a;
+    return elements
+        .filter(element =>
+            element.values.some(item =>
+                item.value.some(value =>
+                    current.match(value))))
+        .map(element => ({
+            type: element.type,
+            key: element.values
+                .filter(item => item.value.some(value => current.match(value)))
+                .reduce((acc, element) => element.key, "")
+        }))
+        .reduce((acc, element) => element, {});
 };
 
-export const constructRecognition = (context: string, element: IRecognition) => {
-    return Object.keys(element).reduce((acc, key) => {
-
-        switch (key) {
-            // case "month":
-            //     return {...acc, month: [...acc.month, current]};
-            //
-            // case "day":
-            //     return {...acc, day: [...acc.day, current]};
-            //
-            // case "lexical":
-            //     return {...acc, lexical: [...acc.lexical, current]};
-            //
-            // case "time":
-            //     return {...acc, time: [...acc.time, current]};
-            //
-            // case "task":
-            //     return {...acc, task: [...acc.task, current]};
-
-            // case "pointer":
-            //     return {...acc, pointer: [...acc.pointer, current]};
-            //
-            // case "appendix":
-            //     return {...acc, appendix: [...acc.appendix, current]};
-        }
-
-    });
-};
+// export const constructRecognition = (context: string, element: IRecognition) => {
+//     return Object.keys(element).reduce((acc, key) => {
+//
+//         switch (key) {
+//             // case "month":
+//             //     return {...acc, month: [...acc.month, current]};
+//             //
+//             // case "day":
+//             //     return {...acc, day: [...acc.day, current]};
+//             //
+//             // case "lexical":
+//             //     return {...acc, lexical: [...acc.lexical, current]};
+//             //
+//             // case "time":
+//             //     return {...acc, time: [...acc.time, current]};
+//             //
+//             // case "task":
+//             //     return {...acc, task: [...acc.task, current]};
+//
+//             // case "pointer":
+//             //     return {...acc, pointer: [...acc.pointer, current]};
+//             //
+//             // case "appendix":
+//             //     return {...acc, appendix: [...acc.appendix, current]};
+//         }
+//
+//     });
+// };

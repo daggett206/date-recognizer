@@ -1,3 +1,5 @@
+import {IElement} from "./elements";
+
 export const months = {
     January : [/^(jan|january)$/gi, /^январ[ьяю]$/gi],
     February : [/^(feb|february)$/gi, /^феврал[ьяю]$/gi],
@@ -31,6 +33,7 @@ export const lexical = {
 };
 
 export const time = {
+    Day: [ /^([1-9]|[12][0-9]|3[01])$/g ],
     Full : [ /^([0-1]?[0-9]|2[0-3])(:[0-5][0-9])?$/gi ],
     Hour : [ /^([0-1]?[0-9]|2[0-3])?$/gi ],
     Minutes : [ /^([0-5][0-9])?$/gi ],
@@ -67,15 +70,27 @@ export const recognitions = {
     task,
 };
 
+export const getDefaultRecognation = () => {
+    return Object
+        .keys(recognitions)
+        .reduce((acc, key) => ({ ...acc, [key]: [] }), {});
+};
+
 export interface IRecognition {
-    task?: string[],
-    lexical?: string[],
-    day?: string[],
-    month?: string[],
-    time?: string[],
-    pointer?: string[],
-    appendix?: string[],
-    action?: string[],
+    task?: IRecognitionItem[],
+    lexical?: IRecognitionItem[],
+    days?: IRecognitionItem[],
+    months?: IRecognitionItem[],
+    time?: IRecognitionItem[],
+    pointer?: IRecognitionItem[],
+    appendix?: IRecognitionItem[],
+    action?: IRecognitionItem[],
+}
+
+export interface IRecognitionItem {
+    element: IElement,
+    value: string,
+    context: IElement[]
 }
 
 export interface IRecognitionBuilder {
@@ -85,7 +100,7 @@ export interface IRecognitionBuilder {
 
 export interface IConstructedRecognition {
     text: string;
-    time: string;
-    date: string;
-    task: string;
+    time: IElement[];
+    date: IElement[];
+    task: IElement[];
 }

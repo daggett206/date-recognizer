@@ -14,7 +14,15 @@ export interface IElement {
     key: string;
 }
 
-const _extract = (type) => {
+export interface IExportedElement {
+    type: elementType;
+    values: {
+        key: string;
+        value: RegExp[];
+    }[]
+}
+
+const _extract = (type): IExportedElement => {
 
     const values = Object
         .keys(recognitions[type])

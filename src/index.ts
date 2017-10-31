@@ -1,56 +1,35 @@
-import {identifyElement, getContext} from "./parsers";
-import {IRecognition, IRecognitionBuilder} from "./declarations";
+import {constructRecognition, getContext, identifyElement} from "./helpers";
+import {IRecognitionBuilder} from "./declarations";
 
 const recognize = (text: string): Promise<IRecognitionBuilder> => {
 
-   const defaultRec: IRecognition = {
-       task: [],
-       lexical: [],
-       day: [],
-       month: [],
-       time: [],
-       pointer: [],
-       appendix: [],
-       action: [],
-   };
-
     const flow = text.split(' ');
-
     const recognition = flow
         .map((value: string) => {
-            const type = identifyElement(value);
-            return {...type, value, context: getContext(flow, value)};
+            const element = identifyElement(value);
+            return {element, value, context: getContext(flow, value)};
         })
         .reduce((acc, current) => {
-
             return {
                 ...acc,
-                [current.type]: [...acc[current.type], current]
+                [current.element.type]: !!acc[current.element.type]
+                    ? [...acc[current.element.type], current]
+                    : [current]
             };
 
-        }, defaultRec);
+        }, {});
 
     return Promise.resolve({recognition, text});
 };
 
 const construct = (builder: IRecognitionBuilder) => {
 
-    const filtered = Object
-        .keys(builder.recognition)
-        .filter(key => builder.recognition[key].length)
-        .map(key => ({[key]: builder.recognition[key]}))
-        // .reduce((acc, element: IRecognition) => {
-        //
-        //     return { ...acc, ...constructRecognition(builder.context, element) };
-        //
-        // });
-
-    console.log(filtered);
+    return constructRecognition(builder);
 };
 
-recognize("Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить")
-    .then(e => console.log(e))
-    // .then(construct);
+recognize("Проснуться 2 января в пятницу завтра через день")
+    .then(construct)
+    // .then(e => console.log(e))
 
 // Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить
 // Мыть машину через 2 дня в 11"

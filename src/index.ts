@@ -1,13 +1,14 @@
-import {constructRecognition, getContext, identifyElement} from "./helpers";
+import {resolveRecognition, getContext, identifyElement} from "./helpers";
 import {IRecognitionBuilder} from "./declarations";
 
 const recognize = (text: string): Promise<IRecognitionBuilder> => {
 
     const flow = text.split(' ');
     const recognition = flow
-        .map((value: string) => {
-            const element = identifyElement(value);
-            return {element, value, context: getContext(flow, value)};
+        .map((value: string, index: number) => {
+            const element = identifyElement(value, index);
+
+            return {element, value, context: getContext(flow, index)};
         })
         .reduce((acc, current) => {
             return {
@@ -22,13 +23,14 @@ const recognize = (text: string): Promise<IRecognitionBuilder> => {
     return Promise.resolve({recognition, text});
 };
 
-const construct = (builder: IRecognitionBuilder) => {
+const resolve = (builder: IRecognitionBuilder) => {
 
-    return constructRecognition(builder);
+    return resolveRecognition(builder);
 };
 
-recognize("Проснуться 2 января в пятницу завтра через день")
-    .then(construct)
+recognize("Сходить в душ после работы в 11")
+    .then(resolve)
+    .then(e => console.log(e))
     // .then(e => console.log(e))
 
 // Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить

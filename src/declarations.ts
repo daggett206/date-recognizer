@@ -155,3 +155,10 @@ export interface IResolvedRecognition {
     task: IElement[];
     garbage?: any[];
 }
+
+export interface IConstructedRecognition {
+    text: string;
+    task: string;
+    date: Date;
+}
+

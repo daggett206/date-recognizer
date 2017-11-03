@@ -1,8 +1,5 @@
 import {elements, elementType, IElement, IExportedElement} from "./elements";
-import {
-    IResolvedRecognition, IRecognition, IRecognitionBuilder, IRecognitionItem,
-    PointerProps
-} from "./declarations";
+import {IResolvedRecognition, IRecognitionBuilder, IRecognitionItem, PointerProps} from "./declarations";
 
 export const getContext = (flow: string[], index: number): IElement[] => {
 

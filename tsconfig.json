@@ -1,7 +1,9 @@
 {
+//  "compileOnSave": true,
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2015",
+    "lib": ["es7", "dom"],
     "noImplicitAny": false,
     "moduleResolution": "node",
     "sourceMap": true,

@@ -1,7 +1,8 @@
 import {days, lexical, months, task, time, pointer, appendix, action, recognitions} from "./declarations";
 
-export type elementType = 'month'
-    | 'day'
+export type elementType =
+    | 'months'
+    | 'days'
     | 'lexical'
     | 'time'
     | 'task'
@@ -12,6 +13,8 @@ export type elementType = 'month'
 export interface IElement {
     type: elementType;
     key: string;
+    value: string;
+    index: number;
 }
 
 export interface IExportedElement {

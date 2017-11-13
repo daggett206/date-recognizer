@@ -1,20 +1,21 @@
-import {constructRecognition, getContext, identifyElement} from "./helpers";
-import {IRecognitionBuilder} from "./declarations";
+import {IConstructedRecognition, IRecognitionBuilder, IResolvedRecognition} from "./declarations";
+import {constructRecognition, getContext, identifyElement, resolveRecognition} from "./core";
 
 const recognize = (text: string): Promise<IRecognitionBuilder> => {
 
     const flow = text.split(' ');
     const recognition = flow
-        .map((value: string) => {
-            const element = identifyElement(value);
-            return {element, value, context: getContext(flow, value)};
+        .map((value: string, index: number) => {
+            const element = identifyElement(value, index);
+
+            return {element, value, context: getContext(flow, index)};
         })
         .reduce((acc, current) => {
             return {
                 ...acc,
                 [current.element.type]: !!acc[current.element.type]
-                    ? [...acc[current.element.type], current]
-                    : [current]
+                                        ? [...acc[current.element.type], current]
+                                        : [current]
             };
 
         }, {});
@@ -22,15 +23,21 @@ const recognize = (text: string): Promise<IRecognitionBuilder> => {
     return Promise.resolve({recognition, text});
 };
 
-const construct = (builder: IRecognitionBuilder) => {
+const resolve = (builder: IRecognitionBuilder) => {
 
-    return constructRecognition(builder);
+    return resolveRecognition(builder);
 };
 
-recognize("Проснуться 2 января в пятницу завтра через день")
-    .then(construct)
-    // .then(e => console.log(e))
+const construct = (resolved: IResolvedRecognition): IConstructedRecognition => {
+    return constructRecognition(resolved);
+};
 
+recognize("Проснуться в понедельник в ванной 2 января в 12")
+    .then(resolve)
+    .then(construct)
+    .then(r => console.log(r))
+
+// "Проснуться в понедельник в ванной 2 января в 12"
 // Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить
 // Мыть машину через 2 дня в 11"
 // Поздравить с ДР через год в 12:30"

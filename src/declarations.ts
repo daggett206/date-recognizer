@@ -30,26 +30,26 @@ export const months = {
 };
 
 export enum DaysProps {
+    Sunday,
     Monday,
     Tuesday,
     Wednesday,
     Thursday,
     Friday,
     Saturday,
-    Sunday,
 }
 export const days = {
+    [DaysProps.Sunday] : [/^(sun|sunday)$/gi, /^(вос|вс|воскр|воскресен[иь][ею])$/gi],
     [DaysProps.Monday] : [/^(mon|monday)$/gi, /^(пон|пн|понедельник)$/gi],
     [DaysProps.Tuesday] : [/^(tue|tuesday)$/gi, /^(вт|вторник)$/gi],
     [DaysProps.Wednesday] : [/^(wed|wednesday)$/gi, /^ср(еда|еду)$/gi],
     [DaysProps.Thursday] : [/^(thu|thursday)$/gi, /^(чет|чт|четверг)$/gi],
     [DaysProps.Friday] : [/^(fri|friday)$/gi, /^(пят|пт|пятниц[ау])$/gi],
     [DaysProps.Saturday] : [/^(sat|saturday)$/gi, /^(суб|сб|суббот[ау])$/gi],
-    [DaysProps.Sunday] : [/^(sun|sunday)$/gi, /^(вос|вс|воскр|воскресен[иь][ею])$/gi],
 };
 
 export enum LexicalProps {
-    Yesterday,
+    Yesterday = -1,
     Today,
     Tomorrow,
     AfterTomorrow,
@@ -127,14 +127,14 @@ export const getDefaultRecognation = () => {
 };
 
 export interface IRecognition {
-    task?: IRecognitionItem[],
-    lexical?: IRecognitionItem[],
-    days?: IRecognitionItem[],
-    months?: IRecognitionItem[],
-    time?: IRecognitionItem[],
-    pointer?: IRecognitionItem[],
-    appendix?: IRecognitionItem[],
-    action?: IRecognitionItem[],
+    task: IRecognitionItem[],
+    lexical: IRecognitionItem[],
+    days: IRecognitionItem[],
+    months: IRecognitionItem[],
+    time: IRecognitionItem[],
+    pointer: IRecognitionItem[],
+    appendix: IRecognitionItem[],
+    action: IRecognitionItem[],
 }
 
 export interface IRecognitionItem {

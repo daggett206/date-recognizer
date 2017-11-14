@@ -8,13 +8,15 @@ export type elementType =
     | 'task'
     | 'pointer'
     | 'appendix'
-    | 'action';
+    | 'action'
+    | 'year';
+// TODO Add year
 
 export interface IElement {
     type: elementType;
-    key: string;
     value: string;
-    index: number;
+    key?: string;
+    index?: number;
 }
 
 export interface IExportedElement {

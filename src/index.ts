@@ -1,30 +1,7 @@
 import {IConstructedRecognition, IRecognitionBuilder, IResolvedRecognition} from "./declarations";
-import {constructRecognition, getContext, identifyElement, resolveRecognition} from "./core";
-
-const recognize = (text: string): Promise<IRecognitionBuilder> => {
-
-    const flow = text.split(' ');
-    const recognition = flow
-        .map((value: string, index: number) => {
-            const element = identifyElement(value, index);
-
-            return {element, value, context: getContext(flow, index)};
-        })
-        .reduce((acc, current) => {
-            return {
-                ...acc,
-                [current.element.type]: !!acc[current.element.type]
-                                        ? [...acc[current.element.type], current]
-                                        : [current]
-            };
-
-        }, {});
-
-    return Promise.resolve({recognition, text});
-};
+import {constructRecognition, recognize, resolveRecognition} from "./core";
 
 const resolve = (builder: IRecognitionBuilder) => {
-
     return resolveRecognition(builder);
 };
 
@@ -32,7 +9,7 @@ const construct = (resolved: IResolvedRecognition): IConstructedRecognition => {
     return constructRecognition(resolved);
 };
 
-recognize("Проснуться в понедельник в ванной 2 января в 12")
+recognize("Сегодня в 21 выключить Дом2")
     .then(resolve)
     .then(construct)
     .then(r => console.log(r))

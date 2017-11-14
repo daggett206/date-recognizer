@@ -1,9 +1,32 @@
 import {elements, elementType, IElement, IExportedElement} from "./elements";
 import {
-    IConstructedRecognition, IRecognitionBuilder, IRecognitionItem, IResolvedRecognition,
-    PointerProps
+    IConstructedRecognition, IRecognition, IRecognitionBuilder, IRecognitionItem, IResolvedRecognition,
+    PointerProps,
 } from "./declarations";
+import * as moment from "moment";
 import {unionBy} from "./utils";
+
+export const recognize = (text: string): Promise<IRecognitionBuilder> => {
+
+    const flow: string[] = text.split(' ').filter(item => item !== '');
+    const recognition: IRecognition = flow
+        .map((value: string, index: number) => {
+            const element = identifyElement(value, index);
+
+            return {element, value, context: getContext(flow, index)};
+        })
+        .reduce((acc, current) => {
+            return {
+                ...acc,
+                [current.element.type]: !!acc[current.element.type]
+                    ? [...acc[current.element.type], current]
+                    : [current]
+            };
+
+        }, {} as IRecognition);
+
+    return Promise.resolve({recognition, text});
+};
 
 export const getContext = (flow: string[], index: number): IElement[] => {
 
@@ -22,6 +45,7 @@ export const identifyElement = (current: string, index: number): IElement => {
     }
 
     const _filterElement = (el: IExportedElement, current: string): boolean => {
+
         return el.values.some(item =>
             item.value.some(value => !!current.match(value)))
     };
@@ -55,7 +79,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
         date: [],
     };
 
-    const resolvePointers = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    const _resolvePointers = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
 
         return items
             .map(item => {
@@ -73,6 +97,10 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                             resolved.date.push(right);
                         }
 
+                        if (left.type === "time") {
+                            resolved.date.push(left);
+                        }
+
                         return resolved;
                     }
                 }[item.element.key]
@@ -82,25 +110,55 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             .reduce(getMergedRecognition, acc);
     };
 
-    const resolveMonths = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    const _resolveMonths = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
 
         return items
             .map(item => {
                 const [left, right] = item.context;
 
-                return left.type === "time" ? {date: [left, item.element]} : {date: [item.element]};
+                // If item's month is lower than current month
+                // it means user wants month of the next year.
+                const currentMonth: number = new Date().getMonth();
+                const currentYear: number = new Date().getFullYear();
+                const month: number = Number(item.element.key);
+                const value: string = (month < currentMonth ? currentYear + 1: currentYear).toString();
+
+                const year: IElement = { type: "year", value };
+
+                return left.type === "time"
+                    ? {date: [ left, item.element, year ]}
+                    : {date: [ item.element, year ]};
             })
             .reduce(getMergedRecognition, acc);
     };
 
-    const resolveDays = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    const _resolveDays = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
 
         return items
             .map(item => ({ date: [item.element] }))
             .reduce(getMergedRecognition, acc);
     };
 
-    const resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    const _resolveLexical = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+
+        return items
+            .filter(item => item)
+            .map(item => {
+
+                // Every lexical word has its own numerical value.
+                // we have to add this value to current date number
+                // for taking actual date offset.
+                const offset: number = Number(item.element.key);
+                const date: number = new Date().getDate();
+                const value: string = String(date + offset);
+                const element: IElement = { type: "time", value };
+
+                return { date: [element] };
+            })
+            .reduce(getMergedRecognition, acc);
+    };
+
+    const _resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
 
         return items
             .map(item => ({ task: [item.element] }))
@@ -121,19 +179,19 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
 
         switch (type) {
             case "pointer":
-                return resolvePointers(acc, recognition[type]);
+                return _resolvePointers(acc, recognition[type]);
 
             case "months":
-                return resolveMonths(acc, recognition[type]);
+                return _resolveMonths(acc, recognition[type]);
 
             case "task":
-                return resolveTasks(acc, recognition[type]);
+                return _resolveTasks(acc, recognition[type]);
 
             case "days":
-                return resolveDays(acc, recognition[type]);
+                return _resolveDays(acc, recognition[type]);
 
-            // case "lexical":
-            //     return {...acc, lexical: [...acc.lexical, current]};
+            case "lexical":
+                return _resolveLexical(acc, recognition[type]);
             //
             // case "time":
             //
@@ -149,17 +207,63 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
     }, defaults);
 };
 
-export const constructRecognition = (resolved: IResolvedRecognition): Partial<IConstructedRecognition> => {
-    const {text} = resolved;
-    const task = resolved.task
-        .sort((a,b) => a.index - b.index)
-        .map(task => task.value)
-        .reduce((acc, value) => `${acc} ${value}`.trim(), ``);
+export const constructRecognition = (resolved: IResolvedRecognition): IConstructedRecognition => {
 
-    console.log(resolved);
+    const _constructDate = (): Date => {
+
+        const fromDate = resolved.date
+            .filter(i => !!i)
+            .reduce((acc, item) => {
+
+                switch (item.type) {
+                    case "year":
+                        return {...acc, year: item.value};
+
+                    case "months":
+                        return {...acc, month: item.key};
+
+                    case "days":
+                        return {...acc, day: item.key};
+
+                    case "time":
+                        return {...acc, date: item.value};
+                }
+
+                return {...acc};
+            }, {});
+
+        const fromTime = resolved.time
+            .filter(i => !!i)
+            .reduce((acc, item) => {
+
+                switch (item.type) {
+                    case "time":
+                        const [hour, minute = 0] = item.value.split(":");
+                        return {...acc, hour, minute};
+                }
+
+                return {...acc};
+            }, {});
+
+        return moment()
+            .set({ ...fromDate, ...fromTime })
+            .toDate();
+    };
+
+    const _constructTask = (): string => {
+        return resolved.task
+            .sort((a,b) => a.index - b.index)
+            .map(task => task.value)
+            .reduce((acc, value) => `${acc} ${value}`.trim(), ``);
+    };
+
+    const {text} = resolved;
+    const task = _constructTask();
+    const date = _constructDate();
 
     return {
         text,
         task,
+        date
     }
 };

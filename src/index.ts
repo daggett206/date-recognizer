@@ -1,7 +1,7 @@
 import {IConstructedRecognition, IRecognitionBuilder, IResolvedRecognition} from "./declarations";
 import {constructRecognition, recognize, resolveRecognition} from "./core";
 
-const resolve = (builder: IRecognitionBuilder) => {
+const resolve = (builder: IRecognitionBuilder): IResolvedRecognition => {
     return resolveRecognition(builder);
 };
 

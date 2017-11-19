@@ -80,19 +80,23 @@ export enum PointerProps {
 }
 export const pointer = {
     [PointerProps.In]: [/^in$/gi, /^через$/gi],
-    [PointerProps.To]: [/^to$/gi, /^[кв]$/gi],
+    [PointerProps.To]: [/^(to|at)$/gi, /^[кв]$/gi],
     // On: [/^on$/gi, /^(на)$/gi],
 };
 
 export enum AppendixProps {
-    Hours,
     Minutes,
+    Hours,
     Days,
+    Months,
+    Years,
 }
 export const appendix = {
+    [AppendixProps.Minutes]: [/^minut(es|e)$/gi, /^мину(т|ту|ы)$/gi],
     [AppendixProps.Hours]: [/^hou(rs|r)$/gi, /^час(ов|а)$/gi],
-    [AppendixProps.Minutes]: [/^minut(es|e)$/gi, /^мину(т|ту)$/gi],
-    [AppendixProps.Days]: [/^da(y|ys)$/gi, /^дн(я|ей)$/gi],
+    [AppendixProps.Days]: [/^da(y|ys)$/gi, /^д(ень|ня|ней)$/gi],
+    [AppendixProps.Months]: [/^month(s)$/gi, /^меся(ц|ца|цев)$/gi],
+    [AppendixProps.Years]: [/^yea(r|rs)$/gi, /^лет|год(а)$/gi],
 };
 
 export enum ActionProps {
@@ -159,4 +163,5 @@ export interface IConstructedRecognition {
     text: string;
     task: string;
     date: Date;
+    remind?: Date;
 }

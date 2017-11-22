@@ -54,9 +54,9 @@ export const identifyElement = (current: string, index: number): IElement => {
     const _extractElement = (el: IExportedElement, current: string): IElement => {
 
         return {
+            index,
             value: current,
             type : el.type,
-            index,
             key  : el.values
                 .filter(item => item.value.some(value => !!current.match(value)))
                 .reduce((acc, element) => element.key, "")
@@ -88,7 +88,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
                         const [left, right] = item.context;
-                        const resolved = {[right.type]: [right]}; // just removed ...acc; watch
+                        const resolved = {[right.type]: [right]};
 
                         if (right.type === "task") {
                             resolved.task.push(item.element);
@@ -103,7 +103,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                         }
 
                         return resolved;
-                    }
+                    },
                 }[item.element.key]
             })
             .filter(item => item)
@@ -117,13 +117,17 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             .map(item => {
                 const [left, right] = item.context;
 
-                // If item's month is lower than current month
+                // If item's monthDay or month is lower than current month
                 // it means user wants month of the next year.
                 const currentMonth: number = new Date().getMonth();
                 const currentYear: number = new Date().getFullYear();
+                const currentMonthDay = new Date().getDate();
                 const month: number = Number(item.element.key);
-                const value: string = (month < currentMonth ? currentYear + 1: currentYear).toString();
 
+                const monthInPast = Number(month) < Number(currentMonth);
+                const dayInPast = Number(left.value) < Number(currentMonthDay);
+
+                const value: string = (dayInPast || monthInPast ? currentYear + 1 : currentYear).toString();
                 const year: IElement = { type: "year", value };
 
                 return left.type === "time"
@@ -137,47 +141,70 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
 
         const _handleInCase = (item: IRecognitionItem) => {
             const [left, right] = item.context;
-            const {value} = item.element;
+            const {value}       = item.element;
 
             // For now if right context is not an appendix
             // it means item and its context are just TASK
             if (right.type !== "appendix") {
-                return { task: [left, item.element, right] }
+                return {task: [item.element]}
+                // return { task: [left, item.element, right] }
             }
 
-            // TODO If the time is lower than now, add 1 to date
-            console.log(`${moment().get('hour')}:${moment().add(value, 'minutes').get('minutes')}`);
+            // return {
+            //     [AppendixProps.Years]: {
+            //         date:[ {type: "year", value: moment().add(value, 'years').get('year') }]
+            //     },
+            //     [AppendixProps.Months]: {
+            //         date:[ {type: "months", value: moment().add(value, 'months').get('month') }]
+            //     },
+            //     [AppendixProps.Days]: {
+            //         date:[ {type: "time", value: moment().add(value, 'days').get('date') }]
+            //     },
+            //     [AppendixProps.Hours]: {
+            //         time: [{ type : "time", value: `${moment().add(val, 'hours').get('hour')}` }]
+            //     },
+            //     [AppendixProps.Minutes]: {
+            //         date:[ {type: "time", value: `${moment().add(value, 'minutes').get('minutes')}` }]
+            //     },
+            // }[right.key]
+
+            const result = {
+                [AppendixProps.Years]: () => moment().add(value, 'years'),
+                [AppendixProps.Months]: () => moment().add(value, 'months'),
+                [AppendixProps.Days]: () => moment().add(value, 'days'),
+                [AppendixProps.Hours]: () => moment().add(value, 'hours'),
+                [AppendixProps.Minutes]: () => moment().add(value, 'minutes'),
+            }[right.key]();
+
+            // console.log(result);
 
             return {
-                [AppendixProps.Years]: {
-                    date:[ {type: "year", value: moment().add(value, 'years').get('year') }]
-                },
-                [AppendixProps.Months]: {
-                    date:[ {type: "months", value: moment().add(value, 'months').get('month') }]
-                },
-                [AppendixProps.Days]: {
-                    date:[ {type: "time", value: moment().add(value, 'days').get('date') }]
-                },
-                [AppendixProps.Hours]: {
-                    time:[ {type: "time", value: moment().add(value, 'hours').get('hour') }]
-                },
-                [AppendixProps.Minutes]: {
-                    date:[ {type: "time", value: `${moment().get('hour')}:${moment().add(value, 'minutes').get('minutes')}` }]
-                },
-            }[right.key]
+                date: [
+                    {type: "year", value: result.year()},
+                    {type: "months", value: result.month()},
+                    {type: "time", value: result.date()},
+                ],
+                time: [
+                    {type: "hour", value: result.hour()},
+                    {type: "minutes", value: result.minutes()},
+                ],
+            }
+
         };
 
         return items
             .map(item => {
-                const [left, right] = item.context;
-                const CASE_IN = left.type === "pointer" && left.key === PointerProps.In.toString();
 
+                const [left, right] = item.context;
+                const CASE_IN = left && left.type === "pointer" && left.key === PointerProps.In.toString();
                 if (CASE_IN) {
                     const a = _handleInCase(item);
-                    console.log(a);
+                    // console.log(a);
                     return a;
                     // resolved.task.push(item.element);
                 }
+
+                return acc;
 
                 // if (right.type === "days") {
                 //     resolved.date.push(right);
@@ -280,14 +307,14 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
                         return {...acc, year: item.value};
 
                     case "months":
-                        return {...acc, month: item.key};
+                        return {...acc, month: item.key || item.value};
 
                     // day of month
                     case "time":
                         return {...acc, date: item.value};
 
                     case "days":
-                        return {...acc, day: item.key};
+                        return {...acc, day: item.key || item.value};
 
                 }
 
@@ -299,10 +326,15 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
             .reduce((acc, item) => {
 
                 switch (item.type) {
-                    //TODO Add minutes and hours
                     case "time":
                         const [hour, minute = 0] = item.value.split(":");
                         return {...acc, hour, minute};
+
+                    case "hour":
+                        return {...acc, hour: item.value};
+
+                    case "minutes":
+                        return {...acc, minutes: item.value};
                 }
 
                 return {...acc};

@@ -92,10 +92,10 @@ export enum AppendixProps {
     Years,
 }
 export const appendix = {
-    [AppendixProps.Minutes]: [/^minut(es|e)$/gi, /^мину(т|ту|ы)$/gi],
-    [AppendixProps.Hours]: [/^hou(rs|r)$/gi, /^час(ов|а)$/gi],
+    [AppendixProps.Minutes]: [/^minut(es|e)$/gi, /^ми(н|н.|нут|нуту|нуты)$/gi],
+    [AppendixProps.Hours]: [/^hou(rs|r)$/gi, /^ча(с|сов|са)$/gi],
     [AppendixProps.Days]: [/^da(y|ys)$/gi, /^д(ень|ня|ней)$/gi],
-    [AppendixProps.Months]: [/^month(s)$/gi, /^меся(ц|ца|цев)$/gi],
+    [AppendixProps.Months]: [/^month(s)$/gi, /^ме(с|с.|сяц|сяца|сяцев)$/gi],
     [AppendixProps.Years]: [/^yea(r|rs)$/gi, /^лет|год(а)$/gi],
 };
 
@@ -112,6 +112,10 @@ export enum TaskProps {
 export const task = {
     [TaskProps.Any]: [ /./g ]
 };
+
+// TODO Add year
+// TODO Add hour
+// TODO Add minutes
 
 export const recognitions = {
     months,

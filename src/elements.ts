@@ -9,8 +9,9 @@ export type elementType =
     | 'pointer'
     | 'appendix'
     | 'action'
-    | 'year';
-// TODO Add year
+    | 'year'
+    | 'hour'
+    | 'minutes';
 
 export interface IElement {
     type: elementType;
@@ -45,4 +46,7 @@ export const elements = [
     "pointer",
     "appendix",
     "action",
+    // "year",
+    // "hour",
+    // "minutes",
 ].map(_extract);

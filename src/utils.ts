@@ -6,6 +6,10 @@ export const unionBy = (array: any[], key: string) => {
     }
 
     return array.filter(item => {
+        if (item[key] === undefined) {
+            return true;
+        }
+
         if (existed.includes(item[key])) {
             return false;
         }

@@ -9,7 +9,7 @@ const construct = (resolved: IResolvedRecognition): IConstructedRecognition => {
     return constructRecognition(resolved);
 };
 
-recognize("завтра покормить кота в 16")
+recognize("через 3 часа купить ламбу")
     .then(resolve)
     .then(construct)
     .then(r => console.log(r))

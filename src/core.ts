@@ -7,7 +7,10 @@ import {
 import * as moment from "moment";
 import {unionBy} from "./utils";
 
-export const recognize = (text: string): Promise<IRecognitionBuilder> => {
+/*
+* Для возмжности тестирования без привязки к текущему времени существует необязательный параметр initDate
+* */
+export const recognize = (text: string, initDate = moment().toISOString()): IRecognitionBuilder => {
 
     const flow: string[] = text.split(' ').filter(item => item !== '');
     const recognition: IRecognition = flow
@@ -26,7 +29,7 @@ export const recognize = (text: string): Promise<IRecognitionBuilder> => {
 
         }, {} as IRecognition);
 
-    return Promise.resolve({recognition, text});
+    return {recognition, text, initDate};
 };
 
 export const getContext = (flow: string[], index: number): IElement[] => {
@@ -71,7 +74,7 @@ export const identifyElement = (current: string, index: number): IElement => {
 
 export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecognition => {
 
-    const {text, recognition} = builder;
+    const {text, recognition, initDate} = builder;
 
     const defaults: IResolvedRecognition = {
         text,
@@ -168,13 +171,18 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             //     },
             // }[right.key]
 
-            const result = {
-                [AppendixProps.Years]: () => moment().add(value, 'years'),
-                [AppendixProps.Months]: () => moment().add(value, 'months'),
-                [AppendixProps.Days]: () => moment().add(value, 'days'),
-                [AppendixProps.Hours]: () => moment().add(value, 'hours'),
-                [AppendixProps.Minutes]: () => moment().add(value, 'minutes'),
-            }[right.key]();
+            const createAppendix = (dateUnit: string) => () => moment(initDate).add(Number(value), dateUnit);
+
+            const result = [
+                [AppendixProps.Years, 'years'],
+                [AppendixProps.Months, 'months'],
+                [AppendixProps.Days, 'days'],
+                [AppendixProps.Hours, 'hours'],
+                [AppendixProps.Minutes, 'minuts']
+            ].reduce((acc, [key, dateUnit]) => {
+                acc[key] = createAppendix(dateUnit);
+                return acc
+            })[right.key]();
 
             // console.log(result);
 
@@ -342,6 +350,10 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
 
         return moment()
             .set({ ...fromDate, ...fromTime })
+            //reset bcs we don't need it
+            .seconds(0)
+            .millisecond(0)
+            //end of reset
             .toDate();
     };
 

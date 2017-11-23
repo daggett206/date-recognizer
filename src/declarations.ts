@@ -153,6 +153,7 @@ export interface IRecognitionItem {
 
 export interface IRecognitionBuilder {
     recognition: IRecognition;
+    initDate: string;
     text: string
 }
 

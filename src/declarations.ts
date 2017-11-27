@@ -153,7 +153,8 @@ export interface IRecognitionItem {
 
 export interface IRecognitionBuilder {
     recognition: IRecognition;
-    text: string
+    text: string;
+    now: string; // ISO string;
 }
 
 export interface IResolvedRecognition {
@@ -168,4 +169,8 @@ export interface IConstructedRecognition {
     task: string;
     date: Date;
     remind?: Date;
+}
+
+export interface IRecognizerProps {
+    now: string; // ISO string
 }

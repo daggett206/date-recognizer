@@ -17,3 +17,7 @@ export const unionBy = (array: any[], key: string) => {
         return Boolean(existed.push(item[key]));
     });
 };
+
+export const pipe = (...fns) =>
+    firstInput =>
+        fns.reduce((prevFnResult, fn) => fn(prevFnResult), firstInput);

@@ -1,46 +1,87 @@
-const cases = require('jest-in-case');
+const cases                                                 = require('jest-in-case');
 const {constructRecognition, recognize, resolveRecognition} = require('../src/core');
-const {pipe} = require('../src/utils');
-const moment = require('moment');
+const {pipe}                                                = require('../src/utils');
+const moment                                                = require('moment');
 
-const testReadyRecognizer = (input, fromDate) => pipe(
-    input => recognize(input, fromDate),
-    resolveRecognition,
-    constructRecognition
-)(input);
+const testReadyRecognizer = (input, now) => {
+    return pipe(
+        input => recognize(input, now),
+        resolveRecognition,
+        constructRecognition
+    )(input, now);
 
-
-/*
-* Создаем изначальную дату для устойчивости тестов. Константу можно задать в любом месте
-* */
+}
 
 const INIT_DATE = moment('2017-11-23T16:59:01.261Z').seconds(0).millisecond(0).toISOString();
-describe('Кейсы с текущим днем', () => {
+
+describe('[Pointer Cases]', () => {
     cases(
-        "позитивные",
-        ({input, expected}) => expect(testReadyRecognizer(input, INIT_DATE)).toMatchObject(expected),
+        "In",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
         [
             {
-                input: 'через 3 часа купить лампу',
+                name    : 'year',
+                input   : 'через 3 года купить лампу',
+                expected: {
+                    date: moment(INIT_DATE).add(3, 'year').toDate(),
+                    task: "купить лампу"
+                }
+            },
+            {
+                name    : 'months',
+                input   : 'через 3 месяца купить лампу',
+                expected: {
+                    date: moment(INIT_DATE).add(3, 'months').toDate(),
+                    task: "купить лампу"
+                }
+            },
+            {
+                name    : 'days',
+                input   : 'через 3 дня купить лампу',
+                expected: {
+                    date: moment(INIT_DATE).add(3, 'days').toDate(),
+                    task: "купить лампу"
+                }
+            },
+            {
+                name    : 'hours',
+                input   : 'через 3 часа купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'hours').toDate(),
                     task: "купить лампу"
                 }
             },
             {
-                input: 'Получить письмо в 18',
+                name    : 'minutes',
+                input   : 'через 3 минуты купить лампу',
                 expected: {
-                    date: moment(INIT_DATE).hours(18).minutes(0).toDate(),
-                    task: "Получить письмо"
+                    date: moment(INIT_DATE).add(3, 'minutes').toDate(),
+                    task: "купить лампу"
+                }
+            },
+        ]
+    )
+
+    cases(
+        "To",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
+        [
+            {
+                name    : 'hours',
+                input   : 'в 3 часа купить лампу',
+                expected: {
+                    date: moment(INIT_DATE).hours(3).toDate(),
+                    task: "купить лампу"
                 }
             },
             {
-                input: 'Через 10 дней купить подарки Жене на Новый год в 12:30 напомнить',
+                name    : 'minutes',
+                input   : 'через 3 минуты купить лампу',
                 expected: {
-                    date: moment(INIT_DATE).add(10, 'days').hours(12).minutes(30).toDate(),
-                    task: "купить подарки Жене на Новый год"
+                    date: moment(INIT_DATE).add(3, 'minutes').toDate(),
+                    task: "купить лампу"
                 }
-            }
+            },
         ]
     )
 });

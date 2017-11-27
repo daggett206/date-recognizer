@@ -1,22 +1,24 @@
 import {elements, elementType, IElement, IExportedElement} from "./elements";
 import {
     AppendixProps,
-    IConstructedRecognition, IRecognition, IRecognitionBuilder, IRecognitionItem, IResolvedRecognition,
+    IConstructedRecognition, IRecognition, IRecognitionBuilder, IRecognitionItem, IRecognizerProps,
+    IResolvedRecognition,
     PointerProps,
 } from "./declarations";
 import * as moment from "moment";
 import {unionBy} from "./utils";
 
-/*
-* Для возмжности тестирования без привязки к текущему времени существует необязательный параметр initDate
-* */
-export const recognize = (text: string, initDate = moment().toISOString()): IRecognitionBuilder => {
+const defaultProps: IRecognizerProps = {
+    now: moment().toISOString(),
+};
 
+export const recognize = (text: string, props: IRecognizerProps = defaultProps): IRecognitionBuilder => {
+
+    const {now} = props;
     const flow: string[] = text.split(' ').filter(item => item !== '');
     const recognition: IRecognition = flow
         .map((value: string, index: number) => {
             const element = identifyElement(value, index);
-
             return {element, value, context: getContext(flow, index)};
         })
         .reduce((acc, current) => {
@@ -29,7 +31,7 @@ export const recognize = (text: string, initDate = moment().toISOString()): IRec
 
         }, {} as IRecognition);
 
-    return {recognition, text, initDate};
+    return {recognition, text, now};
 };
 
 export const getContext = (flow: string[], index: number): IElement[] => {
@@ -73,8 +75,7 @@ export const identifyElement = (current: string, index: number): IElement => {
 };
 
 export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecognition => {
-
-    const {text, recognition, initDate} = builder;
+    const {text, recognition, now} = builder;
 
     const defaults: IResolvedRecognition = {
         text,
@@ -93,15 +94,17 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                         const [left, right] = item.context;
                         const resolved = {[right.type]: [right]};
 
-                        if (right.type === "task") {
+                        console.log(left, right);
+
+                        if (right && right.type === "task") {
                             resolved.task.push(item.element);
                         }
 
-                        if (right.type === "days") {
+                        if (right && right.type === "days") {
                             resolved.date.push(right);
                         }
 
-                        if (left.type === "time") {
+                        if (left && left.type === "time") {
                             resolved.date.push(left);
                         }
 
@@ -153,38 +156,17 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 // return { task: [left, item.element, right] }
             }
 
-            // return {
-            //     [AppendixProps.Years]: {
-            //         date:[ {type: "year", value: moment().add(value, 'years').get('year') }]
-            //     },
-            //     [AppendixProps.Months]: {
-            //         date:[ {type: "months", value: moment().add(value, 'months').get('month') }]
-            //     },
-            //     [AppendixProps.Days]: {
-            //         date:[ {type: "time", value: moment().add(value, 'days').get('date') }]
-            //     },
-            //     [AppendixProps.Hours]: {
-            //         time: [{ type : "time", value: `${moment().add(val, 'hours').get('hour')}` }]
-            //     },
-            //     [AppendixProps.Minutes]: {
-            //         date:[ {type: "time", value: `${moment().add(value, 'minutes').get('minutes')}` }]
-            //     },
-            // }[right.key]
-
-            const createAppendix = (dateUnit: string) => () => moment(initDate).add(Number(value), dateUnit);
+            const createAppendix = (dateUnit: string) =>
+                () => moment(now).add(value as moment.unitOfTime.DurationConstructor, dateUnit);
 
             const result = [
-                [AppendixProps.Years, 'years'],
-                [AppendixProps.Months, 'months'],
-                [AppendixProps.Days, 'days'],
-                [AppendixProps.Hours, 'hours'],
-                [AppendixProps.Minutes, 'minuts']
-            ].reduce((acc, [key, dateUnit]) => {
-                acc[key] = createAppendix(dateUnit);
-                return acc
-            })[right.key]();
-
-            // console.log(result);
+                ['' + AppendixProps.Years, 'years'],
+                ['' + AppendixProps.Months, 'months'],
+                ['' + AppendixProps.Days, 'days'],
+                ['' + AppendixProps.Hours, 'hours'],
+                ['' + AppendixProps.Minutes, 'minutes'],
+            ]
+                .reduce((acc, [key, dateUnit]) => ({ ...acc, [key]: createAppendix(dateUnit) }), {})[right.key]();
 
             return {
                 date: [

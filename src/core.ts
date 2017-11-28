@@ -31,6 +31,35 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
 
         }, {} as IRecognition);
 
+    // TODO This is right way
+    // const recognition = flow
+    //     .map((value: string, index: number) => {
+    //         const element = identifyElement(value, index);
+    //         return {element, value};
+    //     })
+    //     .reduce((acc, current) => acc.map(c => [...c, current]), [[]])
+    //     .reduce((acc, arr) => {
+    //         return arr
+    //             .map((current, index) => {
+    //                 return Object.assign(current, {
+    //                     context: [-1,1].map(step => (arr[index + step] || null))
+    //                 })
+    //             });
+    //
+    //     }, [])
+    //
+    //     .reduce((acc, current) => {
+    //         return {
+    //             ...acc,
+    //             [current.element.type]: !!acc[current.element.type]
+    //                 ? [...acc[current.element.type], current]
+    //                 : [current]
+    //         };
+    //
+    //     }, {} as IRecognition);
+
+    console.log(recognition.pointer[0].context[1]);
+
     return {recognition, text, now};
 };
 
@@ -93,8 +122,6 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                     [PointerProps.To]: function RussianContextStrategy() {
                         const [left, right] = item.context;
                         const resolved = {[right.type]: [right]};
-
-                        console.log(left, right);
 
                         if (right && right.type === "task") {
                             resolved.task.push(item.element);

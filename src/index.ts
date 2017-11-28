@@ -4,8 +4,8 @@ import {IRecognizerProps} from "./declarations";
 
 const recognizer = (input: string, props: IRecognizerProps) => pipe(
     input => recognize(input, props),
-    resolveRecognition,
-    constructRecognition,
+    // resolveRecognition,
+    // constructRecognition,
 )(input, props);
 
 

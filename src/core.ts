@@ -60,36 +60,36 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
     return {recognition, text, now};
 };
 
-/** @deprecated */
-export const getContext = (flow: string[], index: number): IElement[] => {
+// /** @deprecated */
+// export const getContext = (flow: string[], index: number): IElement[] => {
+//
+//     if (index === -1) {
+//         return null;
+//     }
+//
+//     return [-1, 1]
+//         .map(operator => identifyElement(flow[index + operator], index + operator));
+// };
 
-    if (index === -1) {
+export const getContext = (item: IRecognitionItem) => {
+
+    if (!item) {
         return null;
     }
 
-    return [-1, 1]
-        .map(operator => identifyElement(flow[index + operator], index + operator));
-};
-
-export const walker = (context: IRecognitionItem[]) => {
-
-    if (!context) {
-        return null;
-    }
-
-    const [left_side, right_side] = context;
+    const [left_side, right_side] = item.context;
 
     // const left = () => left_side && left_side.element;
     const right = (steps: number = 1) => {
-        if (steps <= 1) {
-            return right_side;
+        if (steps < 1) {
+            return item;
         }
 
         if (right_side === null) {
             return null;
         }
 
-        return walker(right_side.context).right(--steps);
+        return getContext(right_side).right(--steps);
     };
 
     return {
@@ -168,7 +168,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 // }[item.element.key]
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
-                        const a: IRecognitionItem = walker(item.context).right(2);
+                        const a: IRecognitionItem = getContext(item).right(-1);
                         console.log(a);
 
                         return acc;

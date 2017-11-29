@@ -85,8 +85,7 @@ export const getContext = (item: IRecognitionItem) => {
             return item;
         }
 
-        const map = {[LEFT]: 0, [RIGHT]: 1};
-        const _item = item.context[map[direction]];
+        const _item = item.context[{[LEFT]: 0, [RIGHT]: 1}[direction]];
 
         if (_item === null) {
             return null;
@@ -177,7 +176,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 // }[item.element.key]
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
-                        const a: IRecognitionItem = getContext(item).step(1);
+                        const a: IRecognitionItem = getContext(item).step(-1);
                         console.log(a);
 
                         return acc;

@@ -3,7 +3,7 @@ import {
     AppendixProps,
     IConstructedRecognition, IRecognition, IRecognitionBuilder, IRecognitionItem, IRecognizerProps,
     IResolvedRecognition,
-    PointerProps,
+    PointerProps, TimeProps,
 } from "./declarations";
 import * as moment from "moment";
 import {unionBy} from "./utils";
@@ -17,22 +17,6 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
 
     const {now} = props;
     const flow: string[] = text.split(' ').filter(item => item !== '');
-
-    // /** @deprecated */
-    // const recognition: IRecognition = flow
-    //     .map((value: string, index: number) => {
-    //         const element = identifyElement(value, index);
-    //         return {element, value, context: getContext(flow, index)};
-    //     })
-    //     .reduce((acc, current) => {
-    //         return {
-    //             ...acc,
-    //             [current.element.type]: !!acc[current.element.type]
-    //                 ? [...acc[current.element.type], current]
-    //                 : [current]
-    //         };
-    //
-    //     }, {} as IRecognition);
 
     const recognition = flow
         .map((value: string, index: number) => {
@@ -60,17 +44,6 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
 
     return {recognition, text, now};
 };
-
-// /** @deprecated */
-// export const getContext = (flow: string[], index: number): IElement[] => {
-//
-//     if (index === -1) {
-//         return null;
-//     }
-//
-//     return [-1, 1]
-//         .map(operator => identifyElement(flow[index + operator], index + operator));
-// };
 
 export const getContext = (item: IRecognitionItem) => {
 
@@ -267,6 +240,11 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 const left: IElement = getContext(item).left().element;
                 const right: IElement = getContext(item).right().element;
 
+                if (Number(item.element.key) === TimeProps.Full) {
+
+                    return {time: [item.element]}
+                }
+
                 if (left && left.type === "pointer") {
 
                     if (Number(left.key) === PointerProps.In) {
@@ -417,7 +395,7 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
 
                 return {...acc};
             }, {});
-
+console.log({ ...fromTime, ...fromDate });
         return moment()
             .set({ ...fromTime, ...fromDate })
             //reset bcs we don't need it

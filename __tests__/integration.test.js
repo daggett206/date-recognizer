@@ -67,6 +67,14 @@ describe('[Pointer Cases]', () => {
         ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
         [
             {
+                name    : 'full',
+                input   : 'завтра в 21:30 выключить Дом2',
+                expected: {
+                    date: moment(INIT_DATE).add(1, "day").hour(21).minutes(30).toDate(),
+                    task: "выключить Дом2"
+                }
+            },
+            {
                 name    : 'hours',
                 input   : 'в 3 часа купить лампу',
                 expected: {

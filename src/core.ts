@@ -100,8 +100,8 @@ export const getContext = (item: IRecognitionItem) => {
     const right = (steps: number = 1) => _generateDirection(steps, RIGHT);
 
     const step = (steps: number = 1) => {
-        const direction = steps < 0 ? left : right;
-        return getContext(item)[direction.name](Math.abs(steps));
+        const direction = steps < 0 ? LEFT : RIGHT;
+        return _generateDirection(Math.abs(steps), direction);
     };
 
     return { left, right, step };

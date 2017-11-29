@@ -16,38 +16,13 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
 
     const {now} = props;
     const flow: string[] = text.split(' ').filter(item => item !== '');
-    const recognition: IRecognition = flow
-        .map((value: string, index: number) => {
-            const element = identifyElement(value, index);
-            return {element, value, context: getContext(flow, index)};
-        })
-        .reduce((acc, current) => {
-            return {
-                ...acc,
-                [current.element.type]: !!acc[current.element.type]
-                    ? [...acc[current.element.type], current]
-                    : [current]
-            };
 
-        }, {} as IRecognition);
-
-    // TODO This is right way
-    // const recognition = flow
+    // /** @deprecated */
+    // const recognition: IRecognition = flow
     //     .map((value: string, index: number) => {
     //         const element = identifyElement(value, index);
-    //         return {element, value};
+    //         return {element, value, context: getContext(flow, index)};
     //     })
-    //     .reduce((acc, current) => acc.map(c => [...c, current]), [[]])
-    //     .reduce((acc, arr) => {
-    //         return arr
-    //             .map((current, index) => {
-    //                 return Object.assign(current, {
-    //                     context: [-1,1].map(step => (arr[index + step] || null))
-    //                 })
-    //             });
-    //
-    //     }, [])
-    //
     //     .reduce((acc, current) => {
     //         return {
     //             ...acc,
@@ -58,11 +33,34 @@ export const recognize = (text: string, props: IRecognizerProps = defaultProps):
     //
     //     }, {} as IRecognition);
 
-    console.log(recognition.pointer[0].context[1]);
+    const recognition = flow
+        .map((value: string, index: number) => {
+            const element = identifyElement(value, index);
+            return {element, value}; //TODO Remove value (dup)
+        })
+        .reduce((acc, current) => acc.map(c => [...c, current]), [[]])
+        .reduce((_, arr) => {
+            return arr
+                .map((current, index) => {
+                    return Object.assign(current, {
+                        context: [-1,1].map(step => (arr[index + step] || null))
+                    })
+                });
+        }, [])
+        .reduce((acc, current) => {
+            return {
+                ...acc,
+                [current.element.type]: !!acc[current.element.type]
+                    ? [...acc[current.element.type], current]
+                    : [current]
+            };
+
+        }, {} as IRecognition);
 
     return {recognition, text, now};
 };
 
+/** @deprecated */
 export const getContext = (flow: string[], index: number): IElement[] => {
 
     if (index === -1) {
@@ -71,6 +69,33 @@ export const getContext = (flow: string[], index: number): IElement[] => {
 
     return [-1, 1]
         .map(operator => identifyElement(flow[index + operator], index + operator));
+};
+
+export const walker = (context: IRecognitionItem[]) => {
+
+    if (!context) {
+        return null;
+    }
+
+    const [left_side, right_side] = context;
+
+    // const left = () => left_side && left_side.element;
+    const right = (steps: number = 1) => {
+        if (steps <= 1) {
+            return right_side;
+        }
+
+        if (right_side === null) {
+            return null;
+        }
+
+        return walker(right_side.context).right(--steps);
+    };
+
+    return {
+        // left,
+        right,
+    }
 };
 
 export const identifyElement = (current: string, index: number): IElement => {
@@ -118,24 +143,35 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
         return items
             .map(item => {
 
+                // return {
+                //     [PointerProps.To]: function RussianContextStrategy() {
+                //         const [left, right] = <IRecognitionItem[]>item.context;
+                //
+                //         console.log(right);
+                //
+                //         const resolved = {[right.element.type]: [right.element]};
+                //
+                //         if (right && right.element.type === "task") {
+                //             resolved.task.push(item.element);
+                //         }
+                //
+                //         if (right && right.element.type === "days") {
+                //             resolved.date.push(right.element);
+                //         }
+                //
+                //         if (left && left.element.type === "time") {
+                //             resolved.date.push(left.element);
+                //         }
+                //
+                //         return resolved;
+                //     },
+                // }[item.element.key]
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
-                        const [left, right] = item.context;
-                        const resolved = {[right.type]: [right]};
+                        const a: IRecognitionItem = walker(item.context).right(2);
+                        console.log(a);
 
-                        if (right && right.type === "task") {
-                            resolved.task.push(item.element);
-                        }
-
-                        if (right && right.type === "days") {
-                            resolved.date.push(right);
-                        }
-
-                        if (left && left.type === "time") {
-                            resolved.date.push(left);
-                        }
-
-                        return resolved;
+                        return acc;
                     },
                 }[item.element.key]
             })
@@ -144,129 +180,129 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             .reduce(getMergedRecognition, acc);
     };
 
-    const _resolveMonths = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-
-        return items
-            .map(item => {
-                const [left, right] = item.context;
-
-                // If item's monthDay or month is lower than current month
-                // it means user wants month of the next year.
-                const currentMonth: number = new Date().getMonth();
-                const currentYear: number = new Date().getFullYear();
-                const currentMonthDay = new Date().getDate();
-                const month: number = Number(item.element.key);
-
-                const monthInPast = Number(month) < Number(currentMonth);
-                const dayInPast = Number(left.value) < Number(currentMonthDay);
-
-                const value: string = (dayInPast || monthInPast ? currentYear + 1 : currentYear).toString();
-                const year: IElement = { type: "year", value };
-
-                return left.type === "time"
-                    ? {date: [ left, item.element, year ]}
-                    : {date: [ item.element, year ]};
-            })
-            .reduce(getMergedRecognition, acc);
-    };
-
-    const _resolveTime = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-
-        const _handleInCase = (item: IRecognitionItem) => {
-            const [left, right] = item.context;
-            const {value}       = item.element;
-
-            // For now if right context is not an appendix
-            // it means item and its context are just TASK
-            if (right.type !== "appendix") {
-                return {task: [item.element]}
-                // return { task: [left, item.element, right] }
-            }
-
-            const createAppendix = (dateUnit: string) =>
-                () => moment(now).add(value as moment.unitOfTime.DurationConstructor, dateUnit);
-
-            const result = [
-                ['' + AppendixProps.Years, 'years'],
-                ['' + AppendixProps.Months, 'months'],
-                ['' + AppendixProps.Days, 'days'],
-                ['' + AppendixProps.Hours, 'hours'],
-                ['' + AppendixProps.Minutes, 'minutes'],
-            ]
-                .reduce((acc, [key, dateUnit]) => ({ ...acc, [key]: createAppendix(dateUnit) }), {})[right.key]();
-
-            return {
-                date: [
-                    {type: "year", value: result.year()},
-                    {type: "months", value: result.month()},
-                    {type: "time", value: result.date()},
-                ],
-                time: [
-                    {type: "hour", value: result.hour()},
-                    {type: "minutes", value: result.minutes()},
-                ],
-            }
-
-        };
-
-        return items
-            .map(item => {
-
-                const [left, right] = item.context;
-                const CASE_IN = left && left.type === "pointer" && left.key === PointerProps.In.toString();
-                if (CASE_IN) {
-                    const a = _handleInCase(item);
-                    // console.log(a);
-                    return a;
-                    // resolved.task.push(item.element);
-                }
-
-                return acc;
-
-                // if (right.type === "days") {
-                //     resolved.date.push(right);
-                // }
-                //
-                // if (left.type === "time") {
-                //     resolved.date.push(left);
-                // }
-            })
-            .filter(i => !!i)
-            .reduce(getMergedRecognition, acc);
-    };
-
-    const _resolveDays = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-
-        return items
-            .map(item => ({ date: [item.element] }))
-            .reduce(getMergedRecognition, acc);
-    };
-
-    const _resolveLexical = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-
-        return items
-            .filter(item => item)
-            .map(item => {
-
-                // Every lexical word has its own numerical value.
-                // we have to add this value to current date number
-                // for taking actual date offset.
-                const offset: number = Number(item.element.key);
-                const date: number = new Date().getDate();
-                const value: string = String(date + offset);
-                const element: IElement = { type: "time", value };
-
-                return { date: [element] };
-            })
-            .reduce(getMergedRecognition, acc);
-    };
-
-    const _resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-
-        return items
-            .map(item => ({ task: [item.element] }))
-            .reduce(getMergedRecognition, acc);
-    };
+    // const _resolveMonths = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    //
+    //     return items
+    //         .map(item => {
+    //             const [left, right] = item.context;
+    //
+    //             // If item's monthDay or month is lower than current month
+    //             // it means user wants month of the next year.
+    //             const currentMonth: number = new Date().getMonth();
+    //             const currentYear: number = new Date().getFullYear();
+    //             const currentMonthDay = new Date().getDate();
+    //             const month: number = Number(item.element.key);
+    //
+    //             const monthInPast = Number(month) < Number(currentMonth);
+    //             const dayInPast = Number(left.value) < Number(currentMonthDay);
+    //
+    //             const value: string = (dayInPast || monthInPast ? currentYear + 1 : currentYear).toString();
+    //             const year: IElement = { type: "year", value };
+    //
+    //             return left.type === "time"
+    //                 ? {date: [ left, item.element, year ]}
+    //                 : {date: [ item.element, year ]};
+    //         })
+    //         .reduce(getMergedRecognition, acc);
+    // };
+    //
+    // const _resolveTime = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    //
+    //     const _handleInCase = (item: IRecognitionItem) => {
+    //         const [left, right] = item.context;
+    //         const {value}       = item.element;
+    //
+    //         // For now if right context is not an appendix
+    //         // it means item and its context are just TASK
+    //         if (right.type !== "appendix") {
+    //             return {task: [item.element]}
+    //             // return { task: [left, item.element, right] }
+    //         }
+    //
+    //         const createAppendix = (dateUnit: string) =>
+    //             () => moment(now).add(value as moment.unitOfTime.DurationConstructor, dateUnit);
+    //
+    //         const result = [
+    //             ['' + AppendixProps.Years, 'years'],
+    //             ['' + AppendixProps.Months, 'months'],
+    //             ['' + AppendixProps.Days, 'days'],
+    //             ['' + AppendixProps.Hours, 'hours'],
+    //             ['' + AppendixProps.Minutes, 'minutes'],
+    //         ]
+    //             .reduce((acc, [key, dateUnit]) => ({ ...acc, [key]: createAppendix(dateUnit) }), {})[right.key]();
+    //
+    //         return {
+    //             date: [
+    //                 {type: "year", value: result.year()},
+    //                 {type: "months", value: result.month()},
+    //                 {type: "time", value: result.date()},
+    //             ],
+    //             time: [
+    //                 {type: "hour", value: result.hour()},
+    //                 {type: "minutes", value: result.minutes()},
+    //             ],
+    //         }
+    //
+    //     };
+    //
+    //     return items
+    //         .map(item => {
+    //
+    //             const [left, right] = item.context;
+    //             const CASE_IN = left && left.type === "pointer" && left.key === PointerProps.In.toString();
+    //             if (CASE_IN) {
+    //                 const a = _handleInCase(item);
+    //                 // console.log(a);
+    //                 return a;
+    //                 // resolved.task.push(item.element);
+    //             }
+    //
+    //             return acc;
+    //
+    //             // if (right.type === "days") {
+    //             //     resolved.date.push(right);
+    //             // }
+    //             //
+    //             // if (left.type === "time") {
+    //             //     resolved.date.push(left);
+    //             // }
+    //         })
+    //         .filter(i => !!i)
+    //         .reduce(getMergedRecognition, acc);
+    // };
+    //
+    // const _resolveDays = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    //
+    //     return items
+    //         .map(item => ({ date: [item.element] }))
+    //         .reduce(getMergedRecognition, acc);
+    // };
+    //
+    // const _resolveLexical = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    //
+    //     return items
+    //         .filter(item => item)
+    //         .map(item => {
+    //
+    //             // Every lexical word has its own numerical value.
+    //             // we have to add this value to current date number
+    //             // for taking actual date offset.
+    //             const offset: number = Number(item.element.key);
+    //             const date: number = new Date().getDate();
+    //             const value: string = String(date + offset);
+    //             const element: IElement = { type: "time", value };
+    //
+    //             return { date: [element] };
+    //         })
+    //         .reduce(getMergedRecognition, acc);
+    // };
+    //
+    // const _resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+    //
+    //     return items
+    //         .map(item => ({ task: [item.element] }))
+    //         .reduce(getMergedRecognition, acc);
+    // };
 
     const getMergedRecognition = (accItem, item) => {
 
@@ -284,20 +320,20 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             case "pointer":
                 return _resolvePointers(acc, recognition[type]);
 
-            case "months":
-                return _resolveMonths(acc, recognition[type]);
-
-            case "task":
-                return _resolveTasks(acc, recognition[type]);
-
-            case "days":
-                return _resolveDays(acc, recognition[type]);
-
-            case "lexical":
-                return _resolveLexical(acc, recognition[type]);
-
-            case "time":
-                return _resolveTime(acc, recognition[type]);
+// case "months":
+//     return _resolveMonths(acc, recognition[type]);
+//
+// case "task":
+//     return _resolveTasks(acc, recognition[type]);
+//
+// case "days":
+//     return _resolveDays(acc, recognition[type]);
+//
+// case "lexical":
+//     return _resolveLexical(acc, recognition[type]);
+//
+// case "time":
+//     return _resolveTime(acc, recognition[type]);
             //
             //     return {...acc, time: [...acc.time, ...recognition[type]]};
             //

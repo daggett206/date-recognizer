@@ -148,7 +148,7 @@ export interface IRecognition {
 export interface IRecognitionItem {
     element: IElement,
     value: string,
-    context: IElement[]
+    context: IRecognitionItem[]
 }
 
 export interface IRecognitionBuilder {

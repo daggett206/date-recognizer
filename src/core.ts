@@ -77,59 +77,34 @@ export const getContext = (item: IRecognitionItem) => {
         return null;
     }
 
-    const [left_side, right_side] = item.context;
+    const LEFT = "left";
+    const RIGHT = "right";
 
-    const _generateDirection = (steps: number) => {
+    const _generateDirection = (steps: number, direction: string) => {
         if (steps < 1) {
             return item;
         }
 
-        if (left_side === null) {
+        const map = {[LEFT]: 0, [RIGHT]: 1};
+        const _item = item.context[map[direction]];
+
+        if (_item === null) {
             return null;
         }
 
-        return getContext(left_side).left(--steps);
+        return getContext(_item)[direction](--steps);
     };
 
-    const left = (steps: number = 1) => {
-        if (steps < 1) {
-            return item;
-        }
+    const left = (steps: number = 1) => _generateDirection(steps, LEFT);
 
-        if (left_side === null) {
-            return null;
-        }
-
-        return getContext(left_side).left(--steps);
-    };
-
-    const right = (steps: number = 1) => {
-        if (steps < 1) {
-            return item;
-        }
-
-        if (right_side === null) {
-            return null;
-        }
-
-        return getContext(right_side).right(--steps);
-    };
+    const right = (steps: number = 1) => _generateDirection(steps, RIGHT);
 
     const step = (steps: number = 1) => {
-        if (steps === 0) {
-            return item;
-        }
-
         const direction = steps < 0 ? left : right;
-
         return getContext(item)[direction.name](Math.abs(steps));
     };
 
-    return {
-        left,
-        right,
-        step
-    }
+    return { left, right, step };
 };
 
 export const identifyElement = (current: string, index: number): IElement => {

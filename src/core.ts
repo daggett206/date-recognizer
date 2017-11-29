@@ -79,7 +79,30 @@ export const getContext = (item: IRecognitionItem) => {
 
     const [left_side, right_side] = item.context;
 
-    // const left = () => left_side && left_side.element;
+    const _generateDirection = (steps: number) => {
+        if (steps < 1) {
+            return item;
+        }
+
+        if (left_side === null) {
+            return null;
+        }
+
+        return getContext(left_side).left(--steps);
+    };
+
+    const left = (steps: number = 1) => {
+        if (steps < 1) {
+            return item;
+        }
+
+        if (left_side === null) {
+            return null;
+        }
+
+        return getContext(left_side).left(--steps);
+    };
+
     const right = (steps: number = 1) => {
         if (steps < 1) {
             return item;
@@ -92,9 +115,20 @@ export const getContext = (item: IRecognitionItem) => {
         return getContext(right_side).right(--steps);
     };
 
+    const step = (steps: number = 1) => {
+        if (steps === 0) {
+            return item;
+        }
+
+        const direction = steps < 0 ? left : right;
+
+        return getContext(item)[direction.name](Math.abs(steps));
+    };
+
     return {
-        // left,
+        left,
         right,
+        step
     }
 };
 
@@ -168,7 +202,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 // }[item.element.key]
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
-                        const a: IRecognitionItem = getContext(item).right(-1);
+                        const a: IRecognitionItem = getContext(item).step(1);
                         console.log(a);
 
                         return acc;

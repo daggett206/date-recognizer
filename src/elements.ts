@@ -18,6 +18,7 @@ export interface IElement {
     value: string;
     key?: string;
     index?: number;
+    priority?: number;
 }
 
 export interface IExportedElement {

@@ -76,11 +76,13 @@ export const time = {
 
 export enum PointerProps {
     In,
-    To
+    To,
+    Next
 }
 export const pointer = {
     [PointerProps.In]: [/^in$/gi, /^через$/gi],
     [PointerProps.To]: [/^(to|at)$/gi, /^[кв]$/gi],
+    [PointerProps.Next]: [/^next$/gi, /^((след)|следую?щ(ей|ая|ий))$/gi],
     // On: [/^on$/gi, /^(на)$/gi],
 };
 

@@ -9,7 +9,7 @@ const recognizer = (input: string, props: IRecognizerProps) => pipe(
 )(input, props);
 
 
-recognizer("купить лампу в 3 часа", {
+recognizer("в 10 часов купить лампу", {
     now: '2011-09-26T13:28:27.672Z'
 }); /*?*/
 

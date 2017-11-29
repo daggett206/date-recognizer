@@ -70,7 +70,7 @@ describe('[Pointer Cases]', () => {
                 name    : 'hours',
                 input   : 'в 3 часа купить лампу',
                 expected: {
-                    date: moment(INIT_DATE).hours(3).toDate(),
+                    date: moment(INIT_DATE).hours(3).minutes(0).toDate(),
                     task: "купить лампу"
                 }
             },
@@ -80,6 +80,193 @@ describe('[Pointer Cases]', () => {
                 expected: {
                     date: moment(INIT_DATE).add(3, 'minutes').toDate(),
                     task: "купить лампу"
+                }
+            },
+        ]
+    )
+});
+
+describe('[Lexical Cases]', () => {
+    cases(
+        "Yesterday",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
+        [
+            {
+                name    : 'вчера подарить подарок',
+                input   : 'вчера подарить подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(-1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить вчера подарок',
+                input   : 'подарить вчера подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(-1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить подарок вчера',
+                input   : 'подарить подарок вчера',
+                expected: {
+                    date: moment(INIT_DATE).add(-1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'yesterday send a gift',
+                input   : 'yesterday send a gift',
+                expected: {
+                    date: moment(INIT_DATE).add(-1, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+            {
+                name    : 'send a gift yesterday',
+                input   : 'send a gift yesterday',
+                expected: {
+                    date: moment(INIT_DATE).add(-1, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+        ]
+    )
+    cases(
+        "Today",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
+        [
+            {
+                name    : 'сегодня подарить подарок',
+                input   : 'сегодня подарить подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(0, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить сегодня подарок',
+                input   : 'подарить сегодня подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(0, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить подарок сегодня',
+                input   : 'подарить подарок сегодня',
+                expected: {
+                    date: moment(INIT_DATE).add(0, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'today send a gift',
+                input   : 'today send a gift',
+                expected: {
+                    date: moment(INIT_DATE).add(0, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+            {
+                name    : 'send a gift today',
+                input   : 'send a gift today',
+                expected: {
+                    date: moment(INIT_DATE).add(0, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+        ]
+    )
+    cases(
+        "Tomorrow",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
+        [
+            {
+                name    : 'завтра подарить подарок',
+                input   : 'завтра подарить подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить завтра подарок',
+                input   : 'подарить завтра подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить подарок завтра',
+                input   : 'подарить подарок завтра',
+                expected: {
+                    date: moment(INIT_DATE).add(1, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'tomorrow send a gift',
+                input   : 'tomorrow send a gift',
+                expected: {
+                    date: moment(INIT_DATE).add(1, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+            {
+                name    : 'send a gift tomorrow',
+                input   : 'send a gift tomorrow',
+                expected: {
+                    date: moment(INIT_DATE).add(1, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+        ]
+    )
+    cases(
+        "AfterTomorrow",
+        ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
+        [
+            {
+                name    : 'послезавтра подарить подарок',
+                input   : 'послезавтра подарить подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(2, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить послезавтра подарок',
+                input   : 'подарить послезавтра подарок',
+                expected: {
+                    date: moment(INIT_DATE).add(2, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'подарить подарок послезавтра',
+                input   : 'подарить подарок послезавтра',
+                expected: {
+                    date: moment(INIT_DATE).add(2, 'day').toDate(),
+                    task: "подарить подарок"
+                }
+            },
+            {
+                name    : 'aftertomorrow send a gift',
+                input   : 'aftertomorrow send a gift',
+                expected: {
+                    date: moment(INIT_DATE).add(2, 'day').toDate(),
+                    task: "send a gift"
+                }
+            },
+            {
+                name    : 'send a gift aftertomorrow',
+                input   : 'send a gift aftertomorrow',
+                expected: {
+                    date: moment(INIT_DATE).add(2, 'day').toDate(),
+                    task: "send a gift"
                 }
             },
         ]

@@ -7,6 +7,7 @@ import {
 } from "./declarations";
 import * as moment from "moment";
 import {unionBy} from "./utils";
+import {Moment} from "moment";
 
 const defaultProps: IRecognizerProps = {
     now: moment().toISOString(),
@@ -88,7 +89,7 @@ export const getContext = (item: IRecognitionItem) => {
         const _item = item.context[{[LEFT]: 0, [RIGHT]: 1}[direction]];
 
         if (_item === null) {
-            return null;
+            return {} as IRecognitionItem;
         }
 
         return getContext(_item)[direction](--steps);
@@ -146,40 +147,39 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
         date: [],
     };
 
+    const _returnDate = (result: Moment) => {
+        return {
+            date: [
+                {type: "year", value: result.year()},
+                {type: "months", value: result.month()},
+                {type: "time", value: result.date()},
+            ],
+            ..._returnTime(result),
+        }
+    };
+
+    const _returnTime = (result: Moment) => {
+        return {
+            time: [
+                {type: "hour", value: result.hour()},
+                {type: "minutes", value: result.minutes()},
+            ],
+        }
+    };
+
     const _resolvePointers = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
 
         return items
             .map(item => {
-
-                // return {
-                //     [PointerProps.To]: function RussianContextStrategy() {
-                //         const [left, right] = <IRecognitionItem[]>item.context;
-                //
-                //         console.log(right);
-                //
-                //         const resolved = {[right.element.type]: [right.element]};
-                //
-                //         if (right && right.element.type === "task") {
-                //             resolved.task.push(item.element);
-                //         }
-                //
-                //         if (right && right.element.type === "days") {
-                //             resolved.date.push(right.element);
-                //         }
-                //
-                //         if (left && left.element.type === "time") {
-                //             resolved.date.push(left.element);
-                //         }
-                //
-                //         return resolved;
-                //     },
-                // }[item.element.key]
                 return {
                     [PointerProps.To]: function RussianContextStrategy() {
-                        const a: IRecognitionItem = getContext(item).step(-1);
-                        console.log(a);
+                        const right: IElement = getContext(item).right(1).element;
 
-                        return acc;
+                        if (right.type && right.type === "task") {
+                            return {task: [item.element]};
+                        }
+
+                        return {};
                     },
                 }[item.element.key]
             })
@@ -214,70 +214,83 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
     //         .reduce(getMergedRecognition, acc);
     // };
     //
-    // const _resolveTime = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-    //
-    //     const _handleInCase = (item: IRecognitionItem) => {
-    //         const [left, right] = item.context;
-    //         const {value}       = item.element;
-    //
-    //         // For now if right context is not an appendix
-    //         // it means item and its context are just TASK
-    //         if (right.type !== "appendix") {
-    //             return {task: [item.element]}
-    //             // return { task: [left, item.element, right] }
-    //         }
-    //
-    //         const createAppendix = (dateUnit: string) =>
-    //             () => moment(now).add(value as moment.unitOfTime.DurationConstructor, dateUnit);
-    //
-    //         const result = [
-    //             ['' + AppendixProps.Years, 'years'],
-    //             ['' + AppendixProps.Months, 'months'],
-    //             ['' + AppendixProps.Days, 'days'],
-    //             ['' + AppendixProps.Hours, 'hours'],
-    //             ['' + AppendixProps.Minutes, 'minutes'],
-    //         ]
-    //             .reduce((acc, [key, dateUnit]) => ({ ...acc, [key]: createAppendix(dateUnit) }), {})[right.key]();
-    //
-    //         return {
-    //             date: [
-    //                 {type: "year", value: result.year()},
-    //                 {type: "months", value: result.month()},
-    //                 {type: "time", value: result.date()},
-    //             ],
-    //             time: [
-    //                 {type: "hour", value: result.hour()},
-    //                 {type: "minutes", value: result.minutes()},
-    //             ],
-    //         }
-    //
-    //     };
-    //
-    //     return items
-    //         .map(item => {
-    //
-    //             const [left, right] = item.context;
-    //             const CASE_IN = left && left.type === "pointer" && left.key === PointerProps.In.toString();
-    //             if (CASE_IN) {
-    //                 const a = _handleInCase(item);
-    //                 // console.log(a);
-    //                 return a;
-    //                 // resolved.task.push(item.element);
-    //             }
-    //
-    //             return acc;
-    //
-    //             // if (right.type === "days") {
-    //             //     resolved.date.push(right);
-    //             // }
-    //             //
-    //             // if (left.type === "time") {
-    //             //     resolved.date.push(left);
-    //             // }
-    //         })
-    //         .filter(i => !!i)
-    //         .reduce(getMergedRecognition, acc);
-    // };
+    const _resolveTime = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+
+        const _pointerIN = (item: IRecognitionItem) => {
+            const right: IElement = getContext(item).right().element;
+            const {value}         = item.element;
+
+            if (!right) {
+                return {task: [item.element]};
+            }
+
+            // For now if right context is not an appendix
+            // it means item and its context are just TASK
+            if (right.type !== "appendix") {
+                return {task: [item.element]}
+            }
+
+            const createAppendix = (dateUnit: string) =>
+                () => moment(now).add(value as moment.unitOfTime.DurationConstructor, dateUnit);
+
+            const result = [
+                ['' + AppendixProps.Years, 'years'],
+                ['' + AppendixProps.Months, 'months'],
+                ['' + AppendixProps.Days, 'days'],
+                ['' + AppendixProps.Hours, 'hours'],
+                ['' + AppendixProps.Minutes, 'minutes'],
+            ]
+                .reduce((acc, [key, dateUnit]) => ({ ...acc, [key]: createAppendix(dateUnit) }), {})[right.key]();
+
+            return _returnDate(result);
+        };
+
+        const _pointerTO = (item: IRecognitionItem) => {
+            const right: IElement = getContext(item).right().element;
+            const {value}         = item.element;
+
+            if (!right
+                || right.type === "pointer"
+                || right.type === "appendix") {
+                const result = moment(now)
+                    .hour(Number(item.element.value))
+                    .minute(0);
+
+                return _returnDate(result);
+            }
+
+        };
+
+        return items
+            .map(item => {
+
+                const left: IElement = getContext(item).left().element;
+                const right: IElement = getContext(item).right().element;
+
+                if (left && left.type === "pointer") {
+
+                    if (Number(left.key) === PointerProps.In) {
+                        return _pointerIN(item);
+                    }
+
+                    if (Number(left.key) === PointerProps.To) {
+                        return _pointerTO(item);
+                    }
+                }
+
+                return {};
+
+                // if (right.type === "days") {
+                //     resolved.date.push(right);
+                // }
+                //
+                // if (left.type === "time") {
+                //     resolved.date.push(left);
+                // }
+            })
+            .filter(i => !!i)
+            .reduce(getMergedRecognition, acc);
+    };
     //
     // const _resolveDays = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
     //
@@ -286,31 +299,33 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
     //         .reduce(getMergedRecognition, acc);
     // };
     //
-    // const _resolveLexical = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-    //
-    //     return items
-    //         .filter(item => item)
-    //         .map(item => {
-    //
-    //             // Every lexical word has its own numerical value.
-    //             // we have to add this value to current date number
-    //             // for taking actual date offset.
-    //             const offset: number = Number(item.element.key);
-    //             const date: number = new Date().getDate();
-    //             const value: string = String(date + offset);
-    //             const element: IElement = { type: "time", value };
-    //
-    //             return { date: [element] };
-    //         })
-    //         .reduce(getMergedRecognition, acc);
-    // };
-    //
-    // const _resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
-    //
-    //     return items
-    //         .map(item => ({ task: [item.element] }))
-    //         .reduce(getMergedRecognition, acc);
-    // };
+    const _resolveLexical = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+
+        return items
+            .filter(item => item)
+            .map(item => {
+
+                // Every lexical word has its own numerical value.
+                // we have to add this value to current date number
+                // for taking actual date offset.
+                const offset: number = Number(item.element.key);
+                const result: Moment = moment(now).add(offset, "day");
+
+                // return _returnDate(result);
+                return {
+                    date: [{ type: "time", value: result.date(), priority: 10 }],
+                    ..._returnTime(result)
+                }
+            })
+            .reduce(getMergedRecognition, acc);
+    };
+
+    const _resolveTasks = (acc: IResolvedRecognition, items: IRecognitionItem[]): IResolvedRecognition => {
+
+        return items
+            .map(item => ({ task: [item.element] }))
+            .reduce(getMergedRecognition, acc);
+    };
 
     const getMergedRecognition = (accItem, item) => {
 
@@ -323,25 +338,25 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
     };
 
     return Object.keys(recognition).reduce((acc, type: elementType): any => {
-
+        // The main rule here is to return from each method only according types
         switch (type) {
             case "pointer":
                 return _resolvePointers(acc, recognition[type]);
 
 // case "months":
 //     return _resolveMonths(acc, recognition[type]);
-//
-// case "task":
-//     return _resolveTasks(acc, recognition[type]);
+
+            case "task":
+                return _resolveTasks(acc, recognition[type]);
 //
 // case "days":
 //     return _resolveDays(acc, recognition[type]);
 //
-// case "lexical":
-//     return _resolveLexical(acc, recognition[type]);
-//
-// case "time":
-//     return _resolveTime(acc, recognition[type]);
+            case "lexical":
+                return _resolveLexical(acc, recognition[type]);
+
+            case "time":
+                return _resolveTime(acc, recognition[type]);
             //
             //     return {...acc, time: [...acc.time, ...recognition[type]]};
             //
@@ -361,6 +376,7 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
 
         const fromDate = resolved.date
             .filter(i => !!i)
+            .sort((a,b) => (a.priority || 0) - (b.priority || 0))
             .reduce((acc, item) => {
 
                 switch (item.type) {
@@ -384,6 +400,7 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
 
         const fromTime = resolved.time
             .filter(i => !!i)
+            .sort((a,b) => (a.priority || 0) - (b.priority || 0))
             .reduce((acc, item) => {
 
                 switch (item.type) {
@@ -402,7 +419,7 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
             }, {});
 
         return moment()
-            .set({ ...fromDate, ...fromTime })
+            .set({ ...fromTime, ...fromDate })
             //reset bcs we don't need it
             .seconds(0)
             .millisecond(0)

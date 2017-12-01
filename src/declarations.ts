@@ -164,6 +164,7 @@ export interface IResolvedRecognition {
     time: IElement[];
     date: IElement[];
     task: IElement[];
+    now: string; // ISO string;
 }
 
 export interface IConstructedRecognition {

@@ -118,6 +118,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
         task: [],
         time: [],
         date: [],
+        now
     };
 
     const _returnDate = (result: Moment) => {
@@ -238,7 +239,7 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 const result = moment(now)[map[right.key]](item.element.value);
 
                 if (Number(right.key) === AppendixProps.Hours) {
-                    // TODO set minutes as 0
+                    return _returnDate(result.minutes(0));
                 }
 
                 return _returnDate(result);
@@ -300,7 +301,6 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 const offset: number = Number(item.element.key);
                 const result: Moment = moment(now).add(offset, "day");
 
-                // return _returnDate(result);
                 return {
                     date: [{ type: "time", value: result.date(), priority: 10 }],
                     ..._returnTime(result)
@@ -407,7 +407,7 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
                 return {...acc};
             }, {});
 // console.log({ ...fromTime, ...fromDate });
-        return moment()
+        return moment(resolved.now)
             .set({ ...fromTime, ...fromDate })
             .seconds(0)
             .millisecond(0)

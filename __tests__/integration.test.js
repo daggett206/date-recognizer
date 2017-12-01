@@ -20,7 +20,7 @@ describe('[Pointer Cases]', () => {
         ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
         [
             {
-                name    : 'year',
+                name    : 'через 3 года купить лампу',
                 input   : 'через 3 года купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'year').toDate(),
@@ -28,7 +28,7 @@ describe('[Pointer Cases]', () => {
                 }
             },
             {
-                name    : 'months',
+                name    : 'через 3 месяца купить лампу',
                 input   : 'через 3 месяца купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'months').toDate(),
@@ -36,7 +36,7 @@ describe('[Pointer Cases]', () => {
                 }
             },
             {
-                name    : 'days',
+                name    : 'через 3 дня купить лампу',
                 input   : 'через 3 дня купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'days').toDate(),
@@ -44,7 +44,7 @@ describe('[Pointer Cases]', () => {
                 }
             },
             {
-                name    : 'hours',
+                name    : 'через 3 часа купить лампу',
                 input   : 'через 3 часа купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'hours').toDate(),
@@ -52,7 +52,7 @@ describe('[Pointer Cases]', () => {
                 }
             },
             {
-                name    : 'minutes',
+                name    : 'через 3 минуты купить лампу',
                 input   : 'через 3 минуты купить лампу',
                 expected: {
                     date: moment(INIT_DATE).add(3, 'minutes').toDate(),
@@ -67,16 +67,9 @@ describe('[Pointer Cases]', () => {
         ({input, expected}) => expect(testReadyRecognizer(input, {now: INIT_DATE})).toMatchObject(expected),
         [
             {
+
                 name    : 'завтра в 21:30 выключить Дом2',
                 input   : 'завтра в 21:30 выключить Дом2',
-                expected: {
-                    date: moment(INIT_DATE).add(1, "day").hour(21).minutes(30).toDate(),
-                    task: "выключить Дом2"
-                }
-            },
-            {
-                name    : 'завтра в 21 30 выключить Дом2',
-                input   : 'завтра в 21 30 выключить Дом2',
                 expected: {
                     date: moment(INIT_DATE).add(1, "day").hour(21).minutes(30).toDate(),
                     task: "выключить Дом2"

@@ -222,12 +222,24 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
             const right: IElement = getContext(item).right().element;
             const {value}         = item.element;
 
-            if (!right
-                || right.type === "pointer"
-                || right.type === "appendix") {
+            if (!right || right.type === "pointer") {
                 const result = moment(now)
                     .hour(Number(item.element.value))
                     .minute(0);
+
+                return _returnDate(result);
+            }
+
+            if (right.type === "appendix") {
+                const map = {
+                    [AppendixProps.Hours]  : "hour",
+                    [AppendixProps.Minutes]: "minutes",
+                };
+                const result = moment(now)[map[right.key]](item.element.value);
+
+                if (Number(right.key) === AppendixProps.Hours) {
+                    // TODO set minutes as 0
+                }
 
                 return _returnDate(result);
             }
@@ -241,7 +253,6 @@ export const resolveRecognition = (builder: IRecognitionBuilder): IResolvedRecog
                 const right: IElement = getContext(item).right().element;
 
                 if (Number(item.element.key) === TimeProps.Full) {
-
                     return {time: [item.element]}
                 }
 
@@ -395,13 +406,11 @@ export const constructRecognition = (resolved: IResolvedRecognition): IConstruct
 
                 return {...acc};
             }, {});
-console.log({ ...fromTime, ...fromDate });
+// console.log({ ...fromTime, ...fromDate });
         return moment()
             .set({ ...fromTime, ...fromDate })
-            //reset bcs we don't need it
             .seconds(0)
             .millisecond(0)
-            //end of reset
             .toDate();
     };
 
